@@ -51,6 +51,7 @@ class AppImageListElement():
     is_updatable_from_url = False
     env_variables: List[str] = dataclasses.field(default_factory=lambda: [])
     exec_arguments: str = ''
+    wrapper_command: str = '' # add wrapper as element
     desktop_entry: Optional[DesktopEntry.DesktopEntry] = None
     update_logic: Optional[AppImageUpdateLogic] = None
     architecture: Optional[AppImageArchitecture] = None
@@ -106,8 +107,26 @@ class AppImageProvider():
                 if os.path.isfile(gfile.get_path()) and get_giofile_content_type(gfile) == 'application/x-desktop':
                     entry = DesktopEntry.DesktopEntry(filename=gfile.get_path())
                     exec_location = entry.getTryExec()
+
+                    # get the config to get the saved wrapper
+                    temp_element = AppImageListElement(
+                        name=entry.getName(),
+                        description=entry.getComment(),
+                        provider=self.name,
+                        installed_status=InstalledStatus.INSTALLED,
+                        file_path=exec_location
+                    )
+                    app_config = temp_element.get_config()
+                    saved_wrapper = app_config.get('wrapper_command', '').strip()
+
                     exec_command_data = extract_terminal_arguments(entry.getExec())
-                    exec_arguments = ' '.join(exec_command_data['arguments'])
+                    exec_args_list = exec_command_data['arguments']
+
+                    # # checks if first argument is a path and not an wrapper or else
+                    if saved_wrapper and len(exec_args_list) > 0 and exec_args_list[0] == exec_location:
+                        exec_args_list.pop(0)
+
+                    exec_arguments = ' '.join(exec_args_list)
 
                     if os.path.isfile(exec_location):
                         exec_gfile = Gio.File.new_for_path(exec_location)
@@ -128,11 +147,11 @@ class AppImageProvider():
                                 trusted=True,
                                 external_folder=(not exec_in_defalut_folder),
                                 exec_arguments=exec_arguments,
-                                env_variables=exec_command_data['env_vars'],
+                                env_variables=exec_command_data.get('env_vars', []),
+                                wrapper_command=saved_wrapper, # passes saved wrapper to element
                             )
 
                             list_element.architecture = None
-
                             output.append(list_element)
                         else:
                             logging.debug(f'{gfile.get_path()} skipped because {exec_location} is not a supported file type')
@@ -419,8 +438,13 @@ class AppImageProvider():
                 el.desktop_file_path = dest_desktop_file_path
                 el.installed_status = InstalledStatus.INSTALLED
 
-            if el.updating_from and el.updating_from.env_variables:
-                el.env_variables = el.updating_from.env_variables
+            if el.updating_from:
+                if el.updating_from.env_variables:
+                    el.env_variables = el.updating_from.env_variables
+
+                if hasattr(el.updating_from, 'wrapper_command'):
+                    el.wrapper_command = el.updating_from.wrapper_command
+
                 self.update_desktop_file(el)
 
             has_desktop_integration = False
@@ -498,6 +522,7 @@ class AppImageProvider():
             version='',
             provider=self.name,
             installed_status=InstalledStatus.NOT_INSTALLED,
+            wrapper_command=saved_wrapper, #include wrapper as element
             file_path=file.get_path(),
             desktop_entry=None,
             local_file=True,
@@ -555,18 +580,21 @@ class AppImageProvider():
         tryexec_command = jd_desktop_file.TryExec
         exec_arguments = el.exec_arguments
         env_vars = ' '.join(el.env_variables)
+        wrapper = el.wrapper_command.strip() # remember to add wrapper to desktop file
+
+        exec_command_parts = []
+        if env_vars:
+            exec_command_parts.append(f'env {env_vars.strip()}')
+
+        if wrapper:
+            exec_command_parts.append(wrapper.strip())
+
+        exec_command_parts.append(shlex.quote(tryexec_command))
 
         if exec_arguments:
-            exec_arguments = f' {exec_arguments}'
+            exec_command_parts.append(exec_arguments.strip())
 
-        if env_vars:
-            env_vars = f'env {env_vars} '
-
-        exec_command = ''.join([
-            env_vars,
-            shlex.quote(tryexec_command),
-            exec_arguments
-        ])
+        exec_command = ' '.join(exec_command_parts)
 
         jd_desktop_file.Exec = exec_command
         jd_desktop_file.write_file(el.desktop_file_path)

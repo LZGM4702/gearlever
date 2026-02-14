@@ -20,6 +20,16 @@ class AppListElement():
         self.provider: str = provider
         self.installed_status: InstalledStatus = installed_status
         self.size: Optional[float] = size
+        # these fields are for launch options or wrapper i guess
+        self.wrapper_command: str = ""
+        self.exec_arguments: str = ""
+        self.env_variables: List[str] = []
 
     def set_installed_status(self, installed_status: InstalledStatus):
         self.installed_status = installed_status
+
+    # also required for wrappers
+    def load_config_data(self, config: Dict):
+        self.wrapper_command = config.get('wrapper_command', '')
+        self.exec_arguments = config.get('exec_arguments', '')
+        self.env_variables = config.get('env_variables', [])

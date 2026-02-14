@@ -75,13 +75,13 @@ class AppDetails(Gtk.ScrolledWindow):
         self.source_selector_revealer = Gtk.Revealer(child=self.source_selector, transition_type=Gtk.RevealerTransitionType.CROSSFADE)
 
         # Action buttons
-        self.primary_action_button = Gtk.Button(label='', valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER, 
+        self.primary_action_button = Gtk.Button(label='', valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER,
                                                 css_classes=self.common_btn_css_classes, width_request=200)
-        self.secondary_action_button = Gtk.Button(label='', valign=Gtk.Align.CENTER, 
+        self.secondary_action_button = Gtk.Button(label='', valign=Gtk.Align.CENTER,
                                             css_classes=self.common_btn_css_classes, width_request=200)
         self.update_action_button = Gtk.Button(
-            label=_('Update'), 
-            valign=Gtk.Align.CENTER, 
+            label=_('Update'),
+            valign=Gtk.Align.CENTER,
             width_request=200,
             css_classes=[*self.common_btn_css_classes, 'suggested-action'],
             visible=False
@@ -91,7 +91,7 @@ class AppDetails(Gtk.ScrolledWindow):
         self.primary_action_button.connect('clicked', self.on_primary_action_button_clicked)
         self.secondary_action_button.connect('clicked', self.on_secondary_action_button_clicked)
         self.update_action_button.connect('clicked', self.update_action_button_clicked)
-        
+
         primary_action_buttons_row = CenteringBox(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         [primary_action_buttons_row.append(el) for el in [self.secondary_action_button, self.update_action_button]]
         [action_buttons_row.append(el) for el in [primary_action_buttons_row, self.primary_action_button]]
@@ -203,7 +203,7 @@ class AppDetails(Gtk.ScrolledWindow):
         # Hashes
         if self.app_list_element.installed_status is not InstalledStatus.INSTALLED:
             gtk_list.append(self.create_app_hash_row())
-        
+
         self.update_installation_status()
 
         self.secondary_action_button.set_visible(True)
@@ -218,6 +218,10 @@ class AppDetails(Gtk.ScrolledWindow):
             # Exec arguments
             self.command_line_arguments_row = self.create_show_exec_args_row()
             gtk_list.append(self.command_line_arguments_row)
+
+            # wrapper arguments
+            self.wrapper_command_row = self.create_wrapper_command_row()
+            gtk_list.append(self.wrapper_command_row)
 
             # A custom link to a website
             gtk_list.append(self.create_edit_custom_website_row())
@@ -319,7 +323,7 @@ class AppDetails(Gtk.ScrolledWindow):
         except Exception as e:
             self.handle_exception(e)
             self.emit('uninstalled-app', self)
-            
+
     def handle_exception(self, e: Exception):
         if type(e) is InternalError:
                 show_message_dialog(
@@ -360,7 +364,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
                 if self.app_list_element.update_logic and (self.app_list_element.update_logic == AppImageUpdateLogic.REPLACE):
                     old_version = next(
-                        filter(lambda old_v: (old_v.name == self.app_list_element.name), self.provider.list_installed()), 
+                        filter(lambda old_v: (old_v.name == self.app_list_element.name), self.provider.list_installed()),
                         None
                     )
 
@@ -377,7 +381,7 @@ class AppDetails(Gtk.ScrolledWindow):
             if self.app_list_element.trusted and (not is_terminal):
                 try:
                     self.app_list_element.set_trusted()
-                    
+
                     pre_launch_label = self.secondary_action_button.get_label()
                     self.secondary_action_button.set_label(_('Launching...'))
                     self.secondary_action_button.set_sensitive(False)
@@ -404,7 +408,7 @@ class AppDetails(Gtk.ScrolledWindow):
             self.update_installation_status()
 
             self.provider.uninstall(self.app_list_element)
-            
+
             app_config = self.get_config_for_app()
             conf = read_json_config('apps')
 
@@ -594,7 +598,7 @@ class AppDetails(Gtk.ScrolledWindow):
     def after_trust_buttons_interaction(self, widget: Adw.Banner):
         if not self.app_list_element:
             return
-        
+
         self.app_list_element.trusted = True
         widget.set_revealed(False)
 
@@ -663,7 +667,7 @@ class AppDetails(Gtk.ScrolledWindow):
         else:
             manager_label = self.update_url_source.get_model().get_string(
                 self.update_url_source.get_selected())
-            
+
             selected_model = None
             for m in UpdateManagerChecker.get_models():
                 if m.label == manager_label:
@@ -681,7 +685,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
                 self.update_manager = UpdateManagerChecker.check_url(url='', el=self.app_list_element)
 
-        [self.update_url_group.remove(r) for r in 
+        [self.update_url_group.remove(r) for r in
             self.update_url_form_rows]
         self.update_url_form_rows = []
 
@@ -752,7 +756,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
         if not self.update_manager.can_handle_link(url=text):
             self.on_app_update_url_error()
-            
+
             time.sleep(def_sleep)
             self.on_app_update_url_reset()
             return
@@ -780,17 +784,17 @@ class AppDetails(Gtk.ScrolledWindow):
 
         if not key:
             return
-        
+
         counts = 0
         for kv_widgets in self.env_variables_widgets:
             k, v = kv_widgets
-            
+
             if k.get_text() == key_widget.get_text():
                 counts += 1
 
         if counts > 1:
             key_widget.add_css_class('error')
-        
+
         value_widget.set_sensitive(counts == 1)
         self.save_vars_btn.set_sensitive(counts == 1)
 
@@ -802,7 +806,7 @@ class AppDetails(Gtk.ScrolledWindow):
     def on_delete_env_var_clicked(self, widget, key_widget, value_widget, listbox):
         for i, kv_widgets in enumerate(self.env_variables_widgets):
             k, v = kv_widgets
-            
+
             if k.get_text() == key_widget.get_text():
                 self.env_variables_widgets.pop(i)
                 break
@@ -901,11 +905,11 @@ class AppDetails(Gtk.ScrolledWindow):
 
         row_img = Gtk.Image(icon_name='gl-earth', pixel_size=self.ACTION_ROW_ICON_SIZE)
         row_btn = Gtk.Button(
-            icon_name='gl-arrow2-top-right-symbolic', 
-            valign=Gtk.Align.CENTER, 
+            icon_name='gl-arrow2-top-right-symbolic',
+            valign=Gtk.Align.CENTER,
             tooltip_text=_('Open URL'),
         )
-        
+
         row_btn.connect('clicked', self.on_web_browser_open_btn_clicked)
 
         row.connect('changed', self.on_web_browser_input_apply)
@@ -918,8 +922,8 @@ class AppDetails(Gtk.ScrolledWindow):
         app_config = self.get_config_for_app()
 
         row_btn = Gtk.Button(
-            icon_name='gl-info-symbolic', 
-            valign=Gtk.Align.CENTER, 
+            icon_name='gl-info-symbolic',
+            valign=Gtk.Align.CENTER,
             tooltip_text=_('How it works'),
         )
 
@@ -935,7 +939,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
         self.update_url_save_btn.connect('clicked', self.on_app_update_url_apply)
 
-        btn_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5, 
+        btn_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5,
                                 valign=Gtk.Align.CENTER)
 
         btn_container.append(row_btn)
@@ -982,7 +986,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
     def create_reload_metadata_row(self) -> Adw.EntryRow:
         row = Adw.ActionRow(selectable=False, activatable=True,
-            title=(_('Reload metadata')), 
+            title=(_('Reload metadata')),
             subtitle=_('Update information like icon, version and description.\nUseful if the app updated itself.')
         )
 
@@ -1006,13 +1010,46 @@ class AppDetails(Gtk.ScrolledWindow):
 
         return row
 
+        # launch wrapper entry
+    def create_wrapper_command_row(self) -> Adw.EntryRow:
+        # fallback if none
+        safe_wrap = self.app_list_element.wrapper_command if self.app_list_element.wrapper_command else ""
+
+        row = Adw.EntryRow(
+            title=_('Launch wrapper'),
+            selectable=False,
+            text=safe_wrap
+        )
+
+        row_img = Gtk.Image(icon_name='gearlever-cmd-args', pixel_size=self.ACTION_ROW_ICON_SIZE)
+        row.add_prefix(row_img)
+        row.connect('changed', self.on_wrapper_command_changed)
+
+        return row
+
+    @debounce(0.5)
+    @idle
+    def on_wrapper_command_changed(self, widget):
+        text = widget.get_text().strip()
+        self.app_list_element.wrapper_command = text
+
+        app_conf = self.get_config_for_app()
+        app_conf['wrapper_command'] = text
+        save_config_for_app(app_conf)
+
+        try:
+            self.provider.update_desktop_file(self.app_list_element)
+        except Exception as e:
+            logging.error(f"Failed to update desktop file: {e}")
+            widget.add_css_class('error')
+
     def create_app_hash_row(self) -> Adw.ActionRow:
         md5_hash = get_file_hash(Gio.File.new_for_path(self.app_list_element.file_path))
         sha1_hash = get_file_hash(Gio.File.new_for_path(self.app_list_element.file_path), 'sha1')
         sha256_hash = get_file_hash(Gio.File.new_for_path(self.app_list_element.file_path), 'sha256')
 
         row = Adw.ActionRow(
-            subtitle=f'md5: {md5_hash}\nsha1: {sha1_hash}\nsha256: {sha256_hash}', 
+            subtitle=f'md5: {md5_hash}\nsha1: {sha1_hash}\nsha256: {sha256_hash}',
             title=_('Hash'),
             selectable=True
         )
@@ -1021,7 +1058,7 @@ class AppDetails(Gtk.ScrolledWindow):
         row.add_prefix(row_img)
 
         return row
-    
+
     def create_exec_path_row(self) -> Adw.ActionRow:
         row = Adw.ActionRow(title=_('Path'), subtitle=self.app_list_element.file_path, subtitle_selectable=True, selectable=False)
         row_img = Gtk.Image(icon_name='gearlever-file-manager-symbolic', pixel_size=self.ACTION_ROW_ICON_SIZE)
@@ -1034,7 +1071,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
     def create_package_info_row(self, gen) -> Adw.ActionRow:
         row = Adw.ActionRow(
-            subtitle=f'{self.provider.name.capitalize()} Type. {gen}', 
+            subtitle=f'{self.provider.name.capitalize()} Type. {gen}',
             title=_('Package type'),
             selectable=False
         )
@@ -1043,7 +1080,7 @@ class AppDetails(Gtk.ScrolledWindow):
         row.add_prefix(row_img)
 
         return row
-    
+
     def create_edit_env_var_form(self, key='', value=''):
         listbox = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL,
@@ -1069,7 +1106,7 @@ class AppDetails(Gtk.ScrolledWindow):
         self.env_variables_widgets.append([row_key, row_value])
 
         return listbox
-    
+
     def create_edit_env_vars_row(self) -> Adw.PreferencesGroup:
         add_btn_content = Adw.ButtonContent(
             icon_name='gl-plus-symbolic',
@@ -1087,7 +1124,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
         self.save_vars_btn.connect('clicked', self.on_save_env_vars_clicked)
 
-        btn_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5, 
+        btn_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5,
                                 valign=Gtk.Align.CENTER)
 
         [btn_container.append(w) for w in [add_item_btn, self.save_vars_btn]]
