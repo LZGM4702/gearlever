@@ -1,3 +1,7 @@
+# Edit
+This fork is the exact same as main, but with support for launching AppImages with wrappers.
+Pretty cool ngl, we can now use 'firejail --appimage', 'gamemoderun', or 'mangohud'.
+
 # Gear Lever
 
 
