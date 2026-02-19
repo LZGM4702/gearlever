@@ -16,7 +16,7 @@ from ..lib import terminal
 from ..lib.async_utils import idle
 from ..lib.json_config import read_config_for_app, remove_update_config
 from ..lib.utils import get_giofile_content_type, gio_copy, get_file_hash, \
-    remove_special_chars, get_random_string, get_osinfo, extract_terminal_arguments, show_message_dialog
+    remove_special_chars, get_random_string, get_osinfo, extract_terminal_arguments, show_message_dialog, gnu_naturalsize
 from ..models.Models import AppUpdateElement, InternalError, DownloadInterruptedException
 from typing import Optional, List, TypedDict
 from gi.repository import GLib, Gtk, Gdk, Gio
@@ -133,13 +133,14 @@ class AppImageProvider():
                         exec_in_defalut_folder = os.path.isfile(
                                 os.path.join(default_folder_path, exec_gfile.get_basename()))
                         exec_in_folder = True if manage_from_outside else exec_in_defalut_folder
+                        file_size = os.stat(exec_location).st_size
 
                         if exec_in_folder and self.can_install_file(exec_gfile):
                             list_element = AppImageListElement(
                                 name=entry.getName(),
                                 desktop_file_path=gfile.get_path(),
                                 description=entry.getComment(),
-                                version=self._get_app_version(None, desktop_entry=entry),
+                                version=' · '.join([self._get_app_version(None, desktop_entry=entry), gnu_naturalsize(file_size)]),
                                 installed_status=InstalledStatus.INSTALLED,
                                 file_path=exec_location,
                                 provider=self.name,
@@ -418,6 +419,7 @@ class AppImageProvider():
             desktop_file_entry_section = original_desktop_entry_section
             desktop_file_entry_section = re.sub(r'^X-AppImage-Version=.*$', "", desktop_file_entry_section, flags=re.MULTILINE)
             desktop_file_entry_section += f'\nX-AppImage-Version={version}\n'
+            desktop_file_entry_section += f'\nX-AppImage-Name={extracted_appimage.desktop_entry.getName()}\n'
 
             desktop_file_content = desktop_file_content.replace(
                 original_desktop_entry_section,

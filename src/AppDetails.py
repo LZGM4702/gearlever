@@ -895,7 +895,7 @@ class AppDetails(Gtk.ScrolledWindow):
 
         if 'website' in app_config:
             title = _('Website')
-            app_config['website']
+            text = app_config['website']
 
         row = Adw.EntryRow(
             title=title,
