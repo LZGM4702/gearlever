@@ -120,11 +120,24 @@ class AppImageProvider():
                     saved_wrapper = app_config.get('wrapper_command', '').strip()
 
                     exec_command_data = extract_terminal_arguments(entry.getExec())
-                    exec_args_list = exec_command_data['arguments']
+                    whole_args_list = exec_command_data['arguments']
 
+                    ## LET ME SEE IF I CAN FIX A SMALL BUG
                     # # checks if first argument is a path and not an wrapper or else
-                    if saved_wrapper and len(exec_args_list) > 0 and exec_args_list[0] == exec_location:
-                        exec_args_list.pop(0)
+                    ##if saved_wrapper and len(exec_args_list) > 0 and exec_args_list[0] == exec_location:
+                    ##    exec_args_list.pop(0)
+
+                    # remove appimage path from arguments list
+                    exec_args_list = [arg for arg in whole_args_list if arg != exec_location]
+
+                    # remove the wrapper from args list so it's in its own space.
+                    if saved_wrapper:
+                        #Use shlex to split into list
+                        wrapper_parts = shlex.split(saved_wrapper)
+                        #wrapper_parts = saved_wrapper.split()
+
+                        # keeps argument if it's not part of the wrapper.
+                        exec_args_list = [arg for arg in exec_args_list if arg not in wrapper_parts]
 
                     exec_arguments = ' '.join(exec_args_list)
 
@@ -419,7 +432,6 @@ class AppImageProvider():
             desktop_file_entry_section = original_desktop_entry_section
             desktop_file_entry_section = re.sub(r'^X-AppImage-Version=.*$', "", desktop_file_entry_section, flags=re.MULTILINE)
             desktop_file_entry_section += f'\nX-AppImage-Version={version}\n'
-            desktop_file_entry_section += f'\nX-AppImage-Name={extracted_appimage.desktop_entry.getName()}\n'
 
             desktop_file_content = desktop_file_content.replace(
                 original_desktop_entry_section,
@@ -440,13 +452,17 @@ class AppImageProvider():
                 el.desktop_file_path = dest_desktop_file_path
                 el.installed_status = InstalledStatus.INSTALLED
 
-            if el.updating_from:
-                if el.updating_from.env_variables:
-                    el.env_variables = el.updating_from.env_variables
+            # Always save the wrapper and env_variables if exists
+            # even if not 'updating' during a reload.
 
-                if hasattr(el.updating_from, 'wrapper_command'):
-                    el.wrapper_command = el.updating_from.wrapper_command
+            #if el.updating_from:
+                #if el.updating_from.env_variables:
+                    #el.env_variables = el.updating_from.env_variables
 
+                #if hasattr(el.updating_from, 'wrapper_command'):
+                    #el.wrapper_command = el.updating_from.wrapper_command
+
+            if el.env_variables or el.wrapper_command:
                 self.update_desktop_file(el)
 
             has_desktop_integration = False
