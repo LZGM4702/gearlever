@@ -510,6 +510,8 @@ class AppImageProvider():
         return str(appimage_type)
 
     def create_list_element_from_file(self, file: Gio.File, return_new_el=False) -> AppImageListElement:
+        # define outside of logic statements
+        saved_wrapper = " "
         if not self.can_install_file(file):
             raise InternalError(message='This file type is not supported')
 
