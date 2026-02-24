@@ -5,7 +5,7 @@ from .lib.constants import APP_ID
 from gi.repository import Gtk, Gio, Adw, Gdk, GLib, GObject # noqa
 from .BackgroudUpdatesFetcher import BackgroudUpdatesFetcher
 from .lib.constants import FETCH_UPDATES_ARG
-from .lib.utils import make_option, url_is_valid
+from .lib.utils import make_option, check_internet
 from .providers.providers_list import appimage_provider
 from .providers.AppImageProvider import AppImageUpdateLogic, AppImageListElement
 from .lib.json_config import read_config_for_app, save_config_for_app, remove_update_config
@@ -74,6 +74,10 @@ class Cli():
         force = ('--force' in argv)
 
         updates: list[AppImageListElement] = []
+
+        if not check_internet():
+            print('Internet connection not available')
+            sys.exit(1)
 
         if update_all:
             Cli.list_updates([])
@@ -341,7 +345,8 @@ class Cli():
             update_url = app_conf.get('update_url', None)
             manager = UpdateManagerChecker.check_url_for_app(a)
             update_mng = f'[{manager.name}]' if manager else '[UpdatesNotAvailable]'
-            table.append([a.name, f'[{a.version}]', update_mng, a.file_path])
+            v = a.version or 'Not specified'
+            table.append([a.name, f'[{v}]', update_mng, a.file_path])
 
         Cli._print_table(table)
 
@@ -351,6 +356,10 @@ class Cli():
 
         installed = appimage_provider.list_installed()
         table = []
+
+        if not check_internet():
+            print('Internet connection not available')
+            sys.exit(1)
 
         for el in installed:
             manager = UpdateManagerChecker.check_url_for_app(el)

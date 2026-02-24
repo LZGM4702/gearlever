@@ -7,6 +7,7 @@ import logging
 import shlex
 import gi
 import hashlib
+import socket
 from . import terminal
 
 gi.require_version('Gtk', '4.0')
@@ -263,7 +264,7 @@ def gnu_naturalsize(value, precision=1):
         return f"-{gnu_naturalsize(abs(value), precision)}"
     
     # Standard GNU suffixes
-    suffixes = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    suffixes = ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
     
     # Set the base for binary (1024)
     base = 1024.0
@@ -282,4 +283,13 @@ def gnu_naturalsize(value, precision=1):
     v = value / math.pow(base, i)
     
     # Return formatted string (e.g., 953.7M)
-    return f"{v:.{precision}f}{suffixes[i]}"
+    return f"{v:.{precision}f} {suffixes[i]}"
+
+def check_internet(host="1.1.1.1", port=53, timeout=3):
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        logging.warning(f"No internet connection detected")
+        return False
