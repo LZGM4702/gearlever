@@ -20,3 +20,4 @@ tests/testfiles/*.appimage
 tests/testfiles/*.AppImage
 tests/testfiles.tar.gz
 custom_patches/
+my-repo/
